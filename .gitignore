@@ -1,0 +1,31 @@
+# --- 데이터 및 실행 환경 ---
+/jenkins_home/
+/postgres_data/
+
+# --- 공통 제외 사항 ---
+**/.DS_Store
+**/.env
+**/.env.local
+**/.env.*
+
+# --- API (Spring Boot) 관련 ---
+/summerwiki-api/build/
+/summerwiki-api/.gradle/
+/summerwiki-api/bin/
+/summerwiki-api/.settings/
+/summerwiki-api/.classpath
+/summerwiki-api/.project
+
+# --- Web (React) 관련 ---
+/summerwiki-web/node_modules/
+/summerwiki-web/build/
+/summerwiki-web/dist/
+/summerwiki-web/.pnp/
+/summerwiki-web/.pnp.js
+
+# --- 시스템 및 기타 ---
+*.jar
+*.war
+/out/
+.idea/
+.vscode/

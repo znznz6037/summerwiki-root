@@ -1,0 +1,10 @@
+/* src/index.css */
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* 잔나비 소곡집 2 시그니처 초록 */
+  --color-jannabi-green: #3C7A57;
+  --color-jannabi-light: #5E9B7D;
+  --color-jannabi-bg: #F2EFE9;
+}

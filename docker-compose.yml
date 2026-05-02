@@ -1,0 +1,81 @@
+services:
+  # 1. Jenkins 설정 (포트 9090)
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins-local
+    user: root
+    ports:
+      - "9090:8080"      # 로컬 9090 접속 -> 컨테이너 8080 연결
+      - "50000:50000"    # 에이전트 통신용
+    volumes:	
+      - ./jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock # 젠킨스 내부에서 도커 명령 실행 가능하게 설정
+    networks:
+      - summerwiki-network
+
+  # 2. PostgreSQL 설정
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - summerwiki-network
+
+  # 3. Redis 설정
+  redis:
+    image: redis
+    container_name: redis-service
+    ports:
+      - "6379:6379"
+    networks:
+      - summerwiki-network
+
+  # 3. SummerWiki App 설정 (포트 8080)
+  summerwiki-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: summerwiki-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - redis
+      - jenkins
+    networks:
+      - summerwiki-network
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Seoul
+
+  # 4. SonarQube
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    networks:
+      - summerwiki-network
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+
+networks:
+  summerwiki-network:
+    driver: bridge
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
