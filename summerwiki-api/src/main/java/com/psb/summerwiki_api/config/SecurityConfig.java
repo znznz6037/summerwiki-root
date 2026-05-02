@@ -37,9 +37,15 @@ public class SecurityConfig {
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
                     // 인증 실패 시 401 Unauthorized 응답해서 React에서 토큰 만료로 인식하도록 처리
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType("application/json;charset=UTF-8");
-                    response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                    // API 요청(/api/**)에 대해서는 프론트엔드가 인지할 수 있게 401 응답
+                    if (request.getRequestURI().startsWith("/api/")) {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        response.setContentType("application/json;charset=UTF-8");
+                        response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"" + authException.getMessage() + "\"}");
+                    } else {
+                        // 일반 페이지(새로고침 등) 요청에 대해서는 메인 페이지로 리다이렉트
+                        response.sendRedirect("/");
+                    }
                 })
             )
             .authorizeHttpRequests(auth -> auth
