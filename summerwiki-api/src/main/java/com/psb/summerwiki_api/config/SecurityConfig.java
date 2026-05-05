@@ -51,6 +51,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/images/**", "/js/**", "/h2-console/**", "/assets/**", "/static/**", "/index.html", "/favicon.ico", "/*.png", "/*.json").permitAll() // 정적 리소스 허용
                 .requestMatchers("/", "/login", "/api/auth/refresh", "/api/auth/logout", "/oauth2/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // Swagger 경로 허용
                 .requestMatchers("/api/**").hasRole(Role.USER.name())
                 .anyRequest().authenticated()
             )
