@@ -52,8 +52,6 @@ public class NoteService {
 
     @ReadOnlyProperty
     public NoteResponse getNote(Long noteId) {
-        noteRepository.updateViewCount(noteId);
-
         Note note = noteRepository.findByIdWithCategory(noteId)
                 .orElseThrow(() -> new IllegalArgumentException("Note not found"));
 
@@ -78,6 +76,10 @@ public class NoteService {
         return noteHistoryRepository.findAllByNoteIdOrderByCreatedDateDesc(noteId).stream()
                 .map(NoteHistoryResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    public void incrementViewCount(Long noteId) {
+        noteRepository.updateViewCount(noteId);
     }
 
     public NoteResponse updateNote(Long noteId, NoteRequest noteRequest) {

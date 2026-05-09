@@ -84,6 +84,7 @@ export const createNote = (title, categoryId) => api.post('/notes', { title, cat
 export const updateNote = (id, title, content, categoryId) => api.put(`/notes/${id}`, { title, content, categoryId });
 export const deleteNote = (id) => api.delete(`/notes/${id}`);
 export const searchNotes = (query) => api.get(`/notes/search?q=${encodeURIComponent(query)}`);
+export const updateNoteViewCount = (id) => api.patch(`/notes/${id}/view`);
 
 export const getHistories = (id) => api.get(`/histories/${id}`);
 
