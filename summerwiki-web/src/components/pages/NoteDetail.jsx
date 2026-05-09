@@ -4,10 +4,10 @@ import { ArrowLeft, Calendar, User, Tag, Edit3, Save, X, Eye, Bold, Italic, List
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import { getNote, updateNote } from '../../api/axios';
+import { getNote, updateNote, updateNoteViewCount } from '../../api/axios';
 
 function NoteDetail({ onBack, onUpdate }) {
-  const { id } = useParams(); // 3. URL에서 id 추출
+  const { id } = useParams();
   const [note, setNote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -15,24 +15,32 @@ function NoteDetail({ onBack, onUpdate }) {
   const [editTitle, setEditTitle] = useState('');
   const textareaRef = useRef(null);
 
-  // 4. 컴포넌트 마운트 시/id 변경 시 데이터 직접 로드
   useEffect(() => {
-    const fetchNote = async () => {
+    const fetchNoteAndUpdateViewCount = async () => {
       setLoading(true);
       try {
         const res = await getNote(id); // API 호출
         const data = res.data.data;
-        console.log(data)
         setNote(data);
         setEditContent(data.content || '');
         setEditTitle(data.title || '');
+
+        // 중복 조회 체크
+        const viewedNotes = JSON.parse(localStorage.getItem('viewedNotes') || '[]');
+        if(!viewedNotes.includes(String(id))) {
+          await updateNoteViewCount(id);
+          viewedNotes.push(String(id));
+          localStorage.setItem('viewedNotes', JSON.stringify(viewedNotes));
+        }
+
       } catch (error) {
         console.error("데이터 로드 실패:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchNote();
+
+    fetchNoteAndUpdateViewCount();
   }, [id]); // id가 바뀔 때마다 상세 페이지 내용이 갱신됨
 
   if (loading) return <div className="p-10 text-center text-gray-500">데이터를 불러오는 중...</div>;
@@ -152,6 +160,7 @@ function NoteDetail({ onBack, onUpdate }) {
           <div className="flex flex-wrap gap-4 text-sm text-gray-500">
             <div className="flex items-center gap-1.5"><Calendar size={14} /><span>{formatDate(note.lastModifiedDate)}</span></div>
             <div className="flex items-center gap-1.5"><User size={14} /><span>{note.lastModifiedBy || '작성자'}</span></div>
+            <div className="flex items-center gap-1.5"><Eye size={14} /><span>{note.viewCount}</span></div>
             <div className="flex items-center gap-1.5 bg-jannabi-bg/50 px-2 py-0.5 rounded-full border border-jannabi-green/10">
               <Tag size={13} className="text-jannabi-green" />
               <span className="text-jannabi-green font-medium text-xs">{note.categoryName || 'General'}</span>

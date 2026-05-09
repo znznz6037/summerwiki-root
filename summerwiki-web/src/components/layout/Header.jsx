@@ -2,9 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { User, BookOpenText, Search, LogOut, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { searchNotes } from '../../api/axios';
+import { useAuth } from '../../contexts/AuthContext';
 
 function Header({ user }) {
     const navigate = useNavigate();
+    const { token, logout } = useAuth();
+    
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -12,12 +15,12 @@ function Header({ user }) {
     
     const menuRef = useRef(null);
     const searchRef = useRef(null);
-    const timerRef = useRef(null); // 디바운싱을 위한 타이머
+    const timerRef = useRef(null);
 
     const GOOGLE_AUTH_URL = "/oauth2/authorization/google";
-    const isLoggedIn = !!localStorage.getItem('accessToken');
+    
+    const isLoggedIn = !!token;
 
-    // 외부 클릭 시 메뉴 및 검색창 닫기
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) setIsMenuOpen(false);
@@ -27,7 +30,6 @@ function Header({ user }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // 실시간 검색 로직 (디바운싱 적용)
     const handleSearchChange = (e) => {
         const value = e.target.value;
         setSearchQuery(value);
@@ -39,8 +41,8 @@ function Header({ user }) {
                 try {
                     const res = await searchNotes(value);
                     const result = res.data.data;
-                    setSearchResults(result);
-                    setIsSearchOpen(result.length > 0);
+                    setSearchResults(result || []);
+                    setIsSearchOpen(result?.length > 0);
                 } catch (error) {
                     console.error("검색 실패:", error);
                 }
@@ -52,15 +54,17 @@ function Header({ user }) {
     };
 
     const handleGoogleLogin = () => window.location.href = GOOGLE_AUTH_URL;
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        window.location.href = '/';
+
+    const handleLogoutClick = () => {
+        setIsMenuOpen(false);
+        logout();
     };
 
     return (
         <header className="h-16 w-full bg-white border-b border-gray-100 px-6 z-50 flex flex-row items-center justify-between flex-shrink-0 relative">
-            <div className="flex flex-row items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-                <div className="flex items-center justify-center p-2 bg-jannabi-green rounded-lg text-white shadow-sm shadow-jannabi-green/20">
+            {/* 로고 영역 */}
+            <div className="flex flex-row items-center gap-3 cursor-pointer group" onClick={() => navigate('/')}>
+                <div className="flex items-center justify-center p-2 bg-jannabi-green rounded-lg text-white shadow-sm shadow-jannabi-green/20 group-hover:scale-105 transition-transform">
                     <BookOpenText size={22} />
                 </div>
                 <h1 className="text-xl font-bold tracking-tight text-jannabi-green">SummerWiki</h1>
@@ -69,13 +73,13 @@ function Header({ user }) {
             <div className="flex flex-row items-center gap-4">
                 {/* 검색 바 */}
                 <div className="relative group hidden md:block" ref={searchRef}>
-                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-jannabi-green transition-colors" />
                     <input 
                         type="text"
                         placeholder="문서 검색..."
                         value={searchQuery}
                         onChange={handleSearchChange}
-                        className="pl-9 pr-4 py-2 bg-gray-50 border border-transparent rounded-xl text-sm w-64 focus:bg-white focus:border-gray-200 outline-none transition-all"
+                        className="pl-9 pr-4 py-2 bg-gray-50 border border-transparent rounded-xl text-sm w-64 focus:bg-white focus:border-jannabi-green/30 focus:ring-4 focus:ring-jannabi-green/5 outline-none transition-all"
                     />
                     {/* 검색 결과 드롭다운 */}
                     {isSearchOpen && (
@@ -89,10 +93,10 @@ function Header({ user }) {
                                         setIsSearchOpen(false);
                                         setSearchQuery("");
                                     }}
-                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
+                                    className="w-full text-left px-4 py-3 hover:bg-jannabi-bg/30 transition-colors"
                                 >
                                     <div className="text-sm font-bold text-gray-800">{note.title}</div>
-                                    <div className="text-xs text-gray-400 truncate mt-0.5">{note.content}</div>
+                                    <div className="text-xs text-gray-400 truncate mt-0.5 line-clamp-1">{note.content}</div>
                                 </button>
                             ))}
                         </div>
@@ -102,27 +106,47 @@ function Header({ user }) {
                 {/* 프로필 섹션 */}
                 {isLoggedIn && user?.data ? (
                     <div className="flex items-center gap-3 relative" ref={menuRef}>
-                        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center hover:ring-2 hover:ring-jannabi-green/30 transition-all shadow-sm">
-                            {user.data.picture ? <img src={user.data.picture} className="w-full h-full object-cover" /> : <User size={20} className="text-gray-400" />}
+                        <button 
+                            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+                            className="w-10 h-10 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center hover:ring-2 hover:ring-jannabi-green/30 transition-all shadow-sm active:scale-95"
+                        >
+                            {user.data.picture ? (
+                                <img src={user.data.picture} alt="profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <User size={20} className="text-gray-400" />
+                            )}
                         </button>
                         <span className="text-sm font-semibold text-gray-700 hidden sm:block">{user.data.name}님</span>
 
                         {isMenuOpen && (
-                            <div className="absolute right-0 top-12 w-48 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
-                                <div className="px-4 py-2 border-b border-gray-50 mb-1">
-                                    <p className="text-xs text-gray-400">내 계정</p>
+                            <div className="absolute right-0 top-12 w-52 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50 animate-in slide-in-from-top-2 duration-200">
+                                <div className="px-4 py-3 border-b border-gray-50 mb-1">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">내 계정</p>
                                     <p className="text-sm font-bold text-gray-800 truncate">{user.data.email}</p>
                                 </div>
-                                <button onClick={() => { navigate('/mypage'); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"><Settings size={16} className="inline mr-2" /> 내 정보 관리</button>
-                                <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50"><LogOut size={16} className="inline mr-2" /> 로그아웃</button>
+                                <button 
+                                    onClick={() => { navigate('/mypage'); setIsMenuOpen(false); }} 
+                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-jannabi-bg/50 flex items-center gap-2 transition-colors"
+                                >
+                                    <Settings size={16} /> 내 정보 관리
+                                </button>
+                                <button 
+                                    onClick={handleLogoutClick} 
+                                    className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                                >
+                                    <LogOut size={16} /> 로그아웃
+                                </button>
                             </div>
                         )}
                     </div>
                 ) : (
-<button onClick={handleGoogleLogin} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all shadow-sm">
-  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-4 h-4" />
-  Google 로그인
-</button>
+                    <button 
+                        onClick={handleGoogleLogin} 
+                        className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+                    >
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-4 h-4" />
+                        Google 로그인
+                    </button>
                 )}
             </div>
         </header>

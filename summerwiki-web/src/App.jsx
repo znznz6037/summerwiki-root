@@ -4,17 +4,21 @@ import { getCategories, getNotes, getUserInfo} from './api/axios';
 import Header from './components/layout/Header';
 import SideBar from './components/layout/SideBar';
 import Footer from './components/layout/Footer';
-import RecentNotes from './components/layout/RecentNotes';
-import NoteDetail from './components/layout/NoteDetail';
+import RecentNotes from './components/pages/RecentNotes';
+import NoteDetail from './components/pages/NoteDetail';
 import OAuth2RedirectHandler from './components/OAuth2RedirectHandler';
 import MyPage from './components/pages/MyPage';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthProvider';
+import { useAuth } from './contexts/AuthContext';
 
 function AppContent() {
+  const { token, logout } = useAuth();
   const [notes, setNotes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken'));
+  //const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken'));
+  const isLoggedIn = !!token;
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,20 +40,23 @@ function AppContent() {
     try {
       const res = await getUserInfo();
       setUser(res.data);
-      setIsLoggedIn(true);
+      //setIsLoggedIn(true);
     } catch (error) {
       console.error("Unauthorized or User Info Loading Failed:", error);
-      localStorage.removeItem('accessToken');
-      setIsLoggedIn(false);
       setUser(null);
+      logout();
     }
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
     //fetchData();
     if(isLoggedIn) {
       fetchUserInfo();
       fetchData();
+    } else {
+      setUser(null);
+      setNotes([]);
+      setCategories([]);
     }
   }, [isLoggedIn, fetchUserInfo, fetchData]);
 
@@ -75,7 +82,7 @@ function AppContent() {
                          : <div className="py-10 text-gray-500">로그인이 필요합니다.</div>
               } />
               <Route path="/notes/:id" element={<NoteDetail onBack={() => navigate('/')} onUpdate={fetchData} />} />
-              <Route path="/mypage" element={isLoggedIn ? <MyPage /> : <Navigate to="/login" />} />
+              <Route path="/mypage" element={isLoggedIn ? <MyPage user={user} /> : <Navigate to="/login" />} />
               <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
               <Route path="/oauth2/authorization/google" element={null} />
             </Routes>
@@ -89,9 +96,11 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 
@@ -61,6 +62,12 @@ public class NoteController {
     @GetMapping("/{id}/history")
     public ApiResponse<List<NoteHistoryResponse>> getNoteHistory(@PathVariable("id") Long id) {
         return ApiResponse.success(noteService.getNoteHistories(id));
+    }
+
+    @PatchMapping("/{id}/view")
+    public ApiResponse<Void> incrementViewCount(@PathVariable("id") Long id) {
+        noteService.incrementViewCount(id);
+        return ApiResponse.success(null);
     }
     
     @PutMapping("/{id}")
