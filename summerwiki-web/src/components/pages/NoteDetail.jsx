@@ -5,6 +5,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { getNote, updateNote, updateNoteViewCount } from '../../api/axios';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 function NoteDetail({ onBack, onUpdate }) {
   const { id } = useParams();
@@ -104,6 +106,45 @@ function NoteDetail({ onBack, onUpdate }) {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      
+      const { selectionStart, selectionEnd } = e.target;
+      const tabChar = "    ";
+      const newContent = 
+        editContent.substring(0, selectionStart) + 
+        tabChar + 
+        editContent.substring(selectionEnd);
+      
+      setEditContent(newContent);
+
+      setTimeout(() => {
+        e.target.selectionStart = e.target.selectionEnd = selectionStart + tabChar.length;
+      }, 0);
+    }
+  };
+
+  const markdownComponents = {
+    code({ inline, className, children, ...props }) {
+      const match = /language-(\w+)/.exec(className || '');
+      return !inline && match ? (
+        <SyntaxHighlighter
+          style={oneDark}
+          language={match[1]}
+          PreTag="div"
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      ) : (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      );
+    }
+  };
+
   return (
     <div className="max-w-5xl">
       {/* 상단 컨트롤 바 */}
@@ -198,6 +239,7 @@ function NoteDetail({ onBack, onUpdate }) {
                   ref={textareaRef}
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className="w-full h-[500px] p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-jannabi-green/10 outline-none resize-none font-mono text-sm"
                   placeholder="마크다운 형식으로 내용을 입력하세요..."
                 />
@@ -207,16 +249,22 @@ function NoteDetail({ onBack, onUpdate }) {
                 <div className="flex items-center gap-2 text-xs font-bold text-jannabi-green uppercase tracking-wider">
                   <Eye size={12} /> Live Preview
                 </div>
-                <div className="prose prose-sm md:prose-base max-w-none prose-green">
-                  <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                <div className="prose prose-sm md:prose-base max-w-none prose-green whitespace-pre-wrap">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    components={markdownComponents}
+                  >
                     {editContent}
                   </ReactMarkdown>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="prose prose-slate md:prose-lg max-w-none prose-green">
-            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+            <div className="prose prose-slate md:prose-lg max-w-none prose-green whitespace-pre-wrap">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              components={markdownComponents}
+            >
               {note.content || '내용이 없습니다.'}
             </ReactMarkdown>
           </div>
