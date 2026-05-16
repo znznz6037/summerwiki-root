@@ -21,12 +21,6 @@ function NoteDetail({ onBack, onUpdate }) {
     const fetchNoteAndUpdateViewCount = async () => {
       setLoading(true);
       try {
-        const res = await getNote(id); // API 호출
-        const data = res.data.data;
-        setNote(data);
-        setEditContent(data.content || '');
-        setEditTitle(data.title || '');
-
         // 중복 조회 체크
         const viewedNotes = JSON.parse(localStorage.getItem('viewedNotes') || '[]');
         if(!viewedNotes.includes(String(id))) {
@@ -34,6 +28,12 @@ function NoteDetail({ onBack, onUpdate }) {
           viewedNotes.push(String(id));
           localStorage.setItem('viewedNotes', JSON.stringify(viewedNotes));
         }
+
+        const res = await getNote(id); // API 호출
+        const data = res.data.data;
+        setNote(data);
+        setEditContent(data.content || '');
+        setEditTitle(data.title || '');
 
       } catch (error) {
         console.error("데이터 로드 실패:", error);

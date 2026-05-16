@@ -16,16 +16,16 @@ function AppContent() {
   const { token, logout } = useAuth();
   const [notes, setNotes] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  //const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('accessToken'));
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+  const [isMobileSearchBarOpen, setIsMobileSearchBarOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const isLoggedIn = !!token;
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const pathParts = location.pathname.split('/'); 
-  const currentNoteId = pathParts[1] === 'notes' && pathParts[2] 
-    ? parseInt(pathParts[2]) 
-    : null;
+  const currentNoteId = pathParts[1] === 'notes' && pathParts[2] ? parseInt(pathParts[2]) : null;
+  
   const fetchData = useCallback(async () => {
     try {
       const [noteRes, catRes] = await Promise.all([getNotes(), getCategories()]);
@@ -40,7 +40,6 @@ function AppContent() {
     try {
       const res = await getUserInfo();
       setUser(res.data);
-      //setIsLoggedIn(true);
     } catch (error) {
       console.error("Unauthorized or User Info Loading Failed:", error);
       setUser(null);
@@ -48,22 +47,53 @@ function AppContent() {
     }
   }, [logout]);
 
+  // 사용자가 브라우저 창 크기를 리사이즈하거나 디바이스를 회전할 때 대응
   useEffect(() => {
-    //fetchData();
-    if(isLoggedIn) {
-      fetchUserInfo();
-      fetchData();
-    } else {
-      setUser(null);
-      setNotes([]);
-      setCategories([]);
+    const handleResize = () => {
+      // 데스크톱 크기로 늘어나면 사이드바를 열어주고, 모바일 크기로 줄어들면 일단 닫아줍니다.
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const initializeAppData = async () => {
+      if(isLoggedIn) {
+        fetchUserInfo();
+        fetchData();
+      } else {
+        setUser(null);
+        setNotes([]);
+        setCategories([]);
+      }
     }
+
+    initializeAppData();
+
   }, [isLoggedIn, fetchUserInfo, fetchData]);
 
   return (
     <div className="flex flex-col h-screen w-screen bg-white overflow-hidden text-gray-900 font-sans">
-      <Header user={user} />
-      <div className="flex flex-row flex-1 w-full overflow-hidden">
+      {isSidebarOpen && !isMobileSearchBarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)} // 외부 영역 터치 시 사이드바 닫기
+          className="fixed inset-0 z-30 md:hidden animate-in fade-in duration-200"
+        />
+      )}
+      <Header 
+        user={user}
+        isSearchOpen={isSearchOpen}
+        setIsSearchOpen={setIsSearchOpen}
+        isMobileSearchBarOpen={isMobileSearchBarOpen}
+        setIsMobileSearchBarOpen={setIsMobileSearchBarOpen}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <div className="flex flex-col md:flex-row flex-1 w-full overflow-hidden relative">
         <SideBar 
                 isSidebarOpen={isSidebarOpen} 
                 onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -74,8 +104,8 @@ function AppContent() {
                 refreshData={fetchData} 
         />
         {/* 메인 위키 레이아웃 */}
-        <main className="flex-1 overflow-y-auto bg-[#FBFBFB] relative">
-          <div className="max-w-5xl h-full px-8 py-10">
+        <main className="flex-1 overflow-y-auto bg-[#FBFBFB] relative w-full">
+          <div className="max-w-5xl h-full px-4 py-6 md:px-8 md:py-10 mx-auto">
             <Routes>
               <Route path="/" element={
               isLoggedIn ? <RecentNotes notes={notes} onnoteClick={(id) => navigate(`/notes/${id}`)} /> 
@@ -89,7 +119,9 @@ function AppContent() {
           </div>
         </main>
       </div>
-      <Footer />
+      <div className="hidden md:block">
+        <Footer />
+      </div>
     </div>
   );
 }
