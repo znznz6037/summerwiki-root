@@ -105,12 +105,12 @@ function AppContent() {
         />
         {/* 메인 위키 레이아웃 */}
         <main className="flex-1 overflow-y-auto bg-[#FBFBFB] relative w-full">
-          <div className="max-w-5xl h-full px-4 py-6 md:px-8 md:py-10 mx-auto">
+          <div className="max-w-full min-h-full md:mb-4 md:px-1 md:py-1 mx-auto">
             <Routes>
               <Route path="/" element={
-              isLoggedIn ? <RecentNotes notes={notes} onnoteClick={(id) => navigate(`/notes/${id}`)} /> 
+              isLoggedIn ? <div/> 
                          : <div className="py-10 text-gray-500">로그인이 필요합니다.</div>
-              } />
+              } />  
               <Route path="/notes/:id" element={<NoteDetail onBack={() => navigate('/')} onUpdate={fetchData} />} />
               <Route path="/mypage" element={isLoggedIn ? <MyPage user={user} /> : <Navigate to="/login" />} />
               <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
@@ -119,7 +119,7 @@ function AppContent() {
           </div>
         </main>
       </div>
-      <div className="hidden md:block">
+      <div className="block">
         <Footer />
       </div>
     </div>

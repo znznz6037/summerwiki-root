@@ -74,12 +74,12 @@ function Header({ user, isSearchOpen, setIsSearchOpen, isMobileSearchBarOpen, se
     };
 
     return (
-        <header className="h-16 w-full bg-white border-b border-gray-100 px-6 z-50 flex flex-row items-center justify-between shrink-0 relative">
+        <header className="h-16 w-full bg-white border-b border-gray-100 pr-6 pl-0 md:px-6 z-50 flex flex-row items-center justify-between shrink-0 relative">
             <div className="flex flex-row items-center gap-1 md:gap-2">
                 {/* 모바일 전용 사이드바 토글 버튼 */}
                 <button 
                     onClick={onToggleSidebar}
-                    className="p-2 hover:bg-gray-50 rounded-xl text-gray-500 md:hidden transition-all min-w-10 h-10 flex items-center justify-center active:scale-95 focus:outline-none"
+                    className="p-1 hover:bg-gray-50 rounded-xl text-gray-500 md:hidden transition-all min-w-10 h-10 flex items-center justify-center active:scale-95 focus:outline-none"
                     aria-label="Toggle Sidebar"
                 >
                     <Menu size={20} />
