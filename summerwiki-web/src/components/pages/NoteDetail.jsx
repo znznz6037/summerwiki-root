@@ -146,7 +146,7 @@ function NoteDetail({ onBack, onUpdate }) {
   };
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-full px-2 py-2">
       {/* 상단 컨트롤 바 */}
       <div className="sticky top-0 z-20 flex items-center justify-between py-4 mb-2 bg-[#FBFBFB]/80">
         <button 
